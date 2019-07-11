@@ -145,10 +145,16 @@ class FilterModelAssignedUsers:
         assigned_users_ids = model.objects.order_by().filter(
             assigned_users__in=value, id=OuterRef('pk')).values('pk')
 
+        TaskModel = apps.get_model("tasks", "Task")
+        subtask_user_ids = TaskModel.objects.order_by().filter(
+            assigned_to__in=value
+        ).values('user_story')
+
+        subtask_user_filter = Q(pk__in=Subquery(subtask_user_ids))
         assigned_user_filter = Q(pk__in=Subquery(assigned_users_ids))
         assigned_to_filter = Q(assigned_to__in=value)
 
-        return Q(assigned_user_filter | assigned_to_filter)
+        return Q(assigned_user_filter | assigned_to_filter | subtask_user_filter)
 
 
 #####################################################################

@@ -468,6 +468,18 @@ def _get_userstories_assigned_users(project, queryset):
                     ON ("userstories_userstory"."status_id" = "projects_userstorystatus"."id")
               LEFT OUTER JOIN "epics_relateduserstory"
                       ON "userstories_userstory"."id" = "epics_relateduserstory"."user_story_id"
+                      WHERE {where}
+           UNION ALL
+           SELECT DISTINCT "tasks_task"."assigned_to_id" as "assigned_user_id",
+		   "userstories_userstory"."id" as "us_id"
+	   FROM "userstories_userstory"
+	   RIGHT JOIN "tasks_task" ON "userstories_userstory"."id" = "tasks_task"."user_story_id"
+	              INNER JOIN "projects_project"
+                      ON ("userstories_userstory"."project_id" = "projects_project"."id") 
+                INNER JOIN "projects_userstorystatus"
+                    ON ("userstories_userstory"."status_id" = "projects_userstorystatus"."id")
+              LEFT OUTER JOIN "epics_relateduserstory"
+                      ON "userstories_userstory"."id" = "epics_relateduserstory"."user_story_id"
                    WHERE {where}
             ),
 
@@ -511,7 +523,7 @@ def _get_userstories_assigned_users(project, queryset):
     """.format(where=where)
 
     with closing(connection.cursor()) as cursor:
-        cursor.execute(extra_sql, where_params + [project.id] + where_params)
+        cursor.execute(extra_sql, where_params + where_params + [project.id] + where_params)
         rows = cursor.fetchall()
 
     result = []
